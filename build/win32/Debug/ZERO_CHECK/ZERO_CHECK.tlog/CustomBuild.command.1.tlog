@@ -1,0 +1,10 @@
+^C:\SOFTWARE\TM13MONITOR\BUILD\CMAKEFILES\18BD1128191BA95EA2D9F5944DD6E2C9\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Software/TM13Monitor -BC:/Software/TM13Monitor/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Software/TM13Monitor/build/TM13Monitor.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

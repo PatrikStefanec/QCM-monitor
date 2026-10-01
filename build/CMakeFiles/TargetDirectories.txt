@@ -1,0 +1,3 @@
+C:/Software/TM13Monitor/build/CMakeFiles/TM13Monitor.dir
+C:/Software/TM13Monitor/build/CMakeFiles/ALL_BUILD.dir
+C:/Software/TM13Monitor/build/CMakeFiles/ZERO_CHECK.dir

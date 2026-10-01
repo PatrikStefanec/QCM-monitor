@@ -1,0 +1,8 @@
+================================================================================
+Linker Errors
+Generated: 2026-09-30T08:07:53.060Z
+Total Errors: 1
+================================================================================
+
+[LNK1168] (MSVC)
+cannot open C:\Software\TM13Monitor\build\Debug\TM13Monitor.exe for writing [C:\Software\TM13Monitor\build\TM13Monitor.vcxproj]
