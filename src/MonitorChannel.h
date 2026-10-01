@@ -44,8 +44,6 @@ private:
     std::string m_logSavedMessage;
 
     float  m_freqWindowHz = 0.5f;
-    double m_baselineFreq = 0.0;
-    bool   m_baselineSet = false;
     bool m_sensorConnected = true;
     bool m_poppedOut = false;
     bool m_markedForRemoval = false;

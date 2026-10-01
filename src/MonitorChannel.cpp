@@ -108,24 +108,7 @@ void MonitorChannel::Update()
                 double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - m_appStart).count();
                 m_time_s.push_back(t);
                 m_frequency_hz.push_back(r.frequency_hz);
-                if (!m_baselineSet && !m_time_s.empty() && m_time_s.back() >= 10.0)
-                {
-                    double sum = 0.0;
-                    int count = 0;
-                    for (size_t i = 0; i < m_time_s.size(); ++i)
-                    {
-                        if (m_time_s[i] <= 10.0)
-                        {
-                            sum += m_frequency_hz[i];
-                            count++;
-                        }
-                    }
-                    if (count > 0)
-                    {
-                        m_baselineFreq = sum / count;
-                        m_baselineSet = true;
-                    }
-                }
+                
                 auto computeRate = [&](int N) -> double {
                     int n = (int)m_frequency_hz.size();
                     if (n <= N) return 0.0;
@@ -242,35 +225,14 @@ void MonitorChannel::Render()
     ImGui::SeparatorText("Frequency");
     ImGui::SetNextItemWidth(140);
     ImGui::InputFloat("+/- Hz window", &m_freqWindowHz, 0.5f, 0.5f, "%.1f");
-    ImGui::SameLine();
-    if (ImGui::Button("Set new reference"))
-    {
-        if (!m_time_s.empty())
-        {
-            double latestTime = m_time_s.back();
-            double sum = 0.0;
-            int count = 0;
-            for (size_t i = m_time_s.size(); i-- > 0; )
-            {
-                if (latestTime - m_time_s[i] > 3.0)
-                    break; // walking backward, stop once we're older than 3s
-                sum += m_frequency_hz[i];
-                count++;
-            }
-            if (count > 0)
-            {
-                m_baselineFreq = sum / count;
-                m_baselineSet = true;
-            }
-        }
-    }
+    
     if (ImPlot::BeginPlot("Frequency", ImVec2(-1, 260)))
     {
         ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, 0);
 
         if (!m_frequency_hz.empty())
         {
-            double center = m_baselineSet ? m_baselineFreq : m_frequency_hz.back();
+            double center = m_frequency_hz.back();
             ImPlot::SetupAxisLimits(ImAxis_Y1, center - m_freqWindowHz, center + m_freqWindowHz, ImGuiCond_Always);
 
             ImPlotSpec spec; spec.LineColor = ImVec4(0.2f, 0.8f, 1.0f, 1.0f); spec.LineWeight = 2.0f;
