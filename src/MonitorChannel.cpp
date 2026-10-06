@@ -5,6 +5,27 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <windows.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+// Resolves to <project root>/logs, creating it if needed.
+// Assumes the exe lives at <root>/build/<Config>/TM13Monitor.exe, matching your CMake layout.
+static std::string GetLogsDirectory()
+{
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+
+    fs::path exeDir = fs::path(exePath).parent_path();       // .../build/Debug
+    fs::path projectRoot = exeDir.parent_path().parent_path(); // .../ (up past Debug, then build)
+    fs::path logsDir = projectRoot / "logs";
+
+    std::error_code ec;
+    fs::create_directories(logsDir, ec); // no-op if it already exists
+
+    return logsDir.string();
+}
 
 MonitorChannel::MonitorChannel(int id) : m_id(id)
 {
@@ -55,18 +76,17 @@ void MonitorChannel::ToggleLogging()
 
         std::ostringstream oss;
         oss << "tm13_ch" << m_id << "_log_" << std::put_time(&tmStruct, "%Y%m%d_%H%M%S") << ".csv";
-        m_logFilePath = oss.str();
+        m_logFilePath = GetLogsDirectory() + "\\" + oss.str();
 
         m_logFile.open(m_logFilePath, std::ios::out);
         if (m_logFile.is_open())
-        {
+        {   
+            m_logFile << std::fixed << std::setprecision(4); // force fixed notation, 4 decimal places
             m_logFile << "Time_s,Frequency_Hz,Rate5pt_Hz_s,Rate30pt_Hz_s,Rate60pt_Hz_s,OscillatorStatus,SampleNumber,DurationMs,DeviceId\n";
             m_logging = true;
             m_logSavedMessage.clear();
 
-            char fullPath[MAX_PATH];
-            GetFullPathNameA(m_logFilePath.c_str(), MAX_PATH, fullPath, nullptr);
-            std::cout << "[Channel " << m_id << "] Logging started: " << fullPath << std::endl;
+            std::cout << "[Channel " << m_id << "] Logging started: " << m_logFilePath << std::endl;
         }
         else
         {
@@ -220,12 +240,8 @@ void MonitorChannel::Render()
 
     if (!m_frequency_hz.empty())
         ImGui::Text("Latest: %.2f Hz", m_frequency_hz.back());
-    ImGui::Text("Polls: %d  OK: %d", m_worker.GetPollCount(), m_worker.GetSuccessCount());
+    // ImGui::Text("Polls: %d  OK: %d", m_worker.GetPollCount(), m_worker.GetSuccessCount());
 
-    ImGui::SeparatorText("Frequency");
-    ImGui::SetNextItemWidth(140);
-    ImGui::InputFloat("+/- Hz window", &m_freqWindowHz, 0.5f, 0.5f, "%.1f");
-    
     if (ImPlot::BeginPlot("Frequency", ImVec2(-1, 260)))
     {
         ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, 0);
@@ -242,6 +258,8 @@ void MonitorChannel::Render()
     }
 
     ImGui::SeparatorText("Deposition Rate");
+    if (!m_time_s.empty())
+        ImGui::Text("30pt rate: %.4f Hz/s", m_rate30.data()[m_rate30.size() - 1]);
     if (ImPlot::BeginPlot("Deposition Rate", ImVec2(-1, 260)))
     {
         ImPlot::SetupAxes("Time [s]", "Rate [Hz/s]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
