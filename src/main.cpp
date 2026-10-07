@@ -16,6 +16,8 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <windows.h>
+#include <filesystem>
 
 #include "SerialPort.h"
 #include "MonitorChannel.h"
@@ -27,6 +29,8 @@
 #include <d3d11.h>
 #include <tchar.h>
 
+
+
 // Data
 static ID3D11Device*            g_pd3dDevice = nullptr;
 static ID3D11DeviceContext*     g_pd3dDeviceContext = nullptr;
@@ -37,6 +41,11 @@ static ID3D11RenderTargetView*  g_mainRenderTargetView = nullptr;
 
 static std::vector<std::unique_ptr<MonitorChannel>> g_channels;
 static int g_nextChannelId = 1;
+static bool g_logging = false;
+static std::ofstream g_logFile;
+static std::string g_logFilePath;
+static std::string g_logSavedMessage;
+namespace fs = std::filesystem;
 
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
@@ -47,8 +56,27 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LONG WINAPI CrashLogHandler(EXCEPTION_POINTERS*)
 {
-    for (auto& ch : g_channels) ch->FlushLog();
+    if (g_logFile.is_open())
+    {
+        g_logFile.flush();
+        g_logFile.close();
+    }
     return EXCEPTION_EXECUTE_HANDLER;
+}
+
+static std::string GetLogsDirectory()
+{
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+
+    fs::path exeDir = fs::path(exePath).parent_path();
+    fs::path projectRoot = exeDir.parent_path().parent_path();
+    fs::path logsDir = projectRoot / "logs";
+
+    std::error_code ec;
+    fs::create_directories(logsDir, ec);
+
+    return logsDir.string();
 }
 
 // Main code
@@ -187,23 +215,82 @@ int main(int, char**)
                             ImGuiWindowFlags_NoBringToFrontOnFocus);
 
                 if (ImGui::Button("Add channel"))
-                    g_channels.push_back(std::make_unique<MonitorChannel>(g_nextChannelId++));
+                g_channels.push_back(std::make_unique<MonitorChannel>(g_nextChannelId++));
                 ImGui::SameLine();
                 ImGui::Text("Channels: %d", (int)g_channels.size());
+
+                ImGui::SameLine();
+                if (ImGui::Button(g_logging ? "Stop and save logging" : "Start logging"))
+                {
+                if (!g_logging)
+                {
+                    auto now = std::chrono::system_clock::now();
+                    std::time_t t = std::chrono::system_clock::to_time_t(now);
+                    std::tm tmStruct;
+                    localtime_s(&tmStruct, &t);
+
+                    std::ostringstream oss;
+                    oss << "tm13_alllog_" << std::put_time(&tmStruct, "%Y%m%d_%H%M%S") << ".csv";
+                    g_logFilePath = GetLogsDirectory() + "\\" + oss.str();
+
+                    g_logFile.open(g_logFilePath, std::ios::out);
+                    if (g_logFile.is_open())
+                    {
+                        g_logFile << std::fixed << std::setprecision(4);
+                        g_logFile << "Channel,Time_s,Frequency_Hz,Rate5pt_Hz_s,Rate30pt_Hz_s,Rate60pt_Hz_s,OscillatorStatus,SampleNumber,DurationMs,DeviceId\n";
+                        g_logging = true;
+                        g_logSavedMessage.clear();
+                        std::cout << "[TM13Monitor] Logging started: " << g_logFilePath << std::endl;
+                    }
+                }
+                else
+                {
+                    g_logFile.flush();
+                    g_logFile.close();
+                    g_logging = false;
+                    g_logSavedMessage = "Log \"" + g_logFilePath + "\" was saved successfully.";
+                    std::cout << "[TM13Monitor] Logging stopped, saved to: " << g_logFilePath << std::endl;
+                }
+                }
+                ImGui::SameLine();
+                {
+                    ImVec2 boxSize(20, 20);
+                    ImVec2 p = ImGui::GetCursorScreenPos();
+                    ImDrawList* dl = ImGui::GetWindowDrawList();
+                    ImU32 boxColor = g_logging ? IM_COL32(0, 200, 0, 255) : IM_COL32(100, 100, 100, 255);
+                    dl->AddRectFilled(p, ImVec2(p.x + boxSize.x, p.y + boxSize.y), boxColor, 3.0f);
+                    dl->AddRect(p, ImVec2(p.x + boxSize.x, p.y + boxSize.y), IM_COL32(0, 0, 0, 255), 3.0f);
+                    ImGui::Dummy(boxSize);
+                }
+
+                if (g_logging)
+                    ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "Logging to: %s", g_logFilePath.c_str());
+                else if (!g_logSavedMessage.empty())
+                    ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "%s", g_logSavedMessage.c_str());
+
                 ImGui::Separator();
 
-                for (auto& ch : g_channels) ch->Update();
+                for (auto& ch : g_channels) ch->Update(&g_logFile, g_logging);
 
-                bool prevWasDocked = false;
+                bool anyDockedRenderedYet = false;
                 for (size_t i = 0; i < g_channels.size(); ++i)
                 {
-                    if (!g_channels[i]->IsPoppedOut() && prevWasDocked)
+                    if (g_channels[i]->IsPoppedOut())
+                    {
+                        g_channels[i]->Render(); // separate OS window, doesn't touch main window layout
+                        continue;
+                    }
+
+                    if (anyDockedRenderedYet)
                         ImGui::SameLine();
 
                     g_channels[i]->Render();
-
-                    prevWasDocked = !g_channels[i]->IsPoppedOut();
+                    anyDockedRenderedYet = true;
                 }
+                g_channels.erase(
+                    std::remove_if(g_channels.begin(), g_channels.end(),
+                        [](const std::unique_ptr<MonitorChannel>& ch) { return ch->WantsRemoval(); }),
+                    g_channels.end());
 
                 ImGui::End();
             }
@@ -238,7 +325,11 @@ int main(int, char**)
         g_SwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);
     }
 
-    for (auto& ch : g_channels) ch->FlushLog();
+    if (g_logFile.is_open())
+    {
+        g_logFile.flush();
+        g_logFile.close();
+    }
     // Cleanup
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();

@@ -13,16 +13,14 @@ public:
     explicit MonitorChannel(int id);
     ~MonitorChannel();
 
-    void Update(); // call once per frame: polls worker, appends data, writes log rows
+    void Update(std::ofstream* sharedLog, bool logging); // call once per frame: polls worker, appends data, writes log rows
     void Render(); // call once per frame: draws this channel's UI panel
-    void FlushLog(); // called on shutdown/crash to make sure the log is saved
     bool IsPoppedOut() const { return m_poppedOut; }
     bool WantsRemoval() const { return m_markedForRemoval; }
 
 private:
     void Connect();
     void Disconnect();
-    void ToggleLogging();
 
     int m_id;
     char m_comPortBuf[32];
@@ -37,11 +35,6 @@ private:
     std::chrono::steady_clock::time_point m_appStart;
     
     std::vector<std::string> m_availablePorts;
-
-    bool m_logging = false;
-    std::ofstream m_logFile;
-    std::string m_logFilePath;
-    std::string m_logSavedMessage;
 
     float  m_freqWindowHz = 0.5f;
     bool m_sensorConnected = true;

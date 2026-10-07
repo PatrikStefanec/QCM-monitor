@@ -10,23 +10,6 @@
 
 namespace fs = std::filesystem;
 
-// Resolves to <project root>/logs, creating it if needed.
-// Assumes the exe lives at <root>/build/<Config>/TM13Monitor.exe, matching your CMake layout.
-static std::string GetLogsDirectory()
-{
-    char exePath[MAX_PATH];
-    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
-
-    fs::path exeDir = fs::path(exePath).parent_path();       // .../build/Debug
-    fs::path projectRoot = exeDir.parent_path().parent_path(); // .../ (up past Debug, then build)
-    fs::path logsDir = projectRoot / "logs";
-
-    std::error_code ec;
-    fs::create_directories(logsDir, ec); // no-op if it already exists
-
-    return logsDir.string();
-}
-
 MonitorChannel::MonitorChannel(int id) : m_id(id)
 {
     snprintf(m_comPortBuf, sizeof(m_comPortBuf), "COM%d", id + 4);
@@ -37,7 +20,6 @@ MonitorChannel::MonitorChannel(int id) : m_id(id)
 MonitorChannel::~MonitorChannel()
 {
     m_worker.Stop(); // stop the polling thread if still running
-    FlushLog();      // make sure any open log is saved
 }
 
 void MonitorChannel::Connect()
@@ -57,60 +39,9 @@ void MonitorChannel::Disconnect()
 {
     m_worker.Stop();
     m_connected = false;
-    if (m_logging)
-    {
-        m_logging = false;
-        if (m_logFile.is_open()) m_logFile.close();
-        m_logSavedMessage = "Log \"" + m_logFilePath + "\" was saved successfully (disconnected).";
-    }
 }
 
-void MonitorChannel::ToggleLogging()
-{
-    if (!m_logging)
-    {
-        auto now = std::chrono::system_clock::now();
-        std::time_t t = std::chrono::system_clock::to_time_t(now);
-        std::tm tmStruct;
-        localtime_s(&tmStruct, &t);
-
-        std::ostringstream oss;
-        oss << "tm13_ch" << m_id << "_log_" << std::put_time(&tmStruct, "%Y%m%d_%H%M%S") << ".csv";
-        m_logFilePath = GetLogsDirectory() + "\\" + oss.str();
-
-        m_logFile.open(m_logFilePath, std::ios::out);
-        if (m_logFile.is_open())
-        {   
-            m_logFile << std::fixed << std::setprecision(4); // force fixed notation, 4 decimal places
-            m_logFile << "Time_s,Frequency_Hz,Rate5pt_Hz_s,Rate30pt_Hz_s,Rate60pt_Hz_s,OscillatorStatus,SampleNumber,DurationMs,DeviceId\n";
-            m_logging = true;
-            m_logSavedMessage.clear();
-
-            std::cout << "[Channel " << m_id << "] Logging started: " << m_logFilePath << std::endl;
-        }
-        else
-        {
-            m_lastError = "Failed to open log file: " + m_logFilePath;
-        }
-    }
-    else
-    {
-        FlushLog();
-        m_logging = false;
-        m_logSavedMessage = "Log \"" + m_logFilePath + "\" was saved successfully.";
-    }
-}
-
-void MonitorChannel::FlushLog()
-{
-    if (m_logFile.is_open())
-    {
-        m_logFile.flush();
-        m_logFile.close();
-    }
-}
-
-void MonitorChannel::Update()
+void MonitorChannel::Update(std::ofstream* sharedLog, bool logging)
 {
     if (!m_connected) return;
 
@@ -128,7 +59,7 @@ void MonitorChannel::Update()
                 double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - m_appStart).count();
                 m_time_s.push_back(t);
                 m_frequency_hz.push_back(r.frequency_hz);
-                
+
                 auto computeRate = [&](int N) -> double {
                     int n = (int)m_frequency_hz.size();
                     if (n <= N) return 0.0;
@@ -140,16 +71,15 @@ void MonitorChannel::Update()
                 m_rate30.push_back(computeRate(30));
                 m_rate60.push_back(computeRate(60));
 
-                if (m_logging && m_logFile.is_open())
+                if (logging && sharedLog && sharedLog->is_open())
                 {
-                    m_logFile << t << "," << r.frequency_hz << "," << m_rate5.back() << ","
-                              << m_rate30.back() << "," << m_rate60.back() << ","
-                              << (int)r.oscillatorStatus << "," << (int)r.sampleNumber << ","
-                              << r.durationMs << "," << (int)r.deviceId << "\n";
-                    m_logFile.flush();
+                    *sharedLog << m_id << "," << t << "," << r.frequency_hz << ","
+                               << m_rate5.back() << "," << m_rate30.back() << "," << m_rate60.back() << ","
+                               << (int)r.oscillatorStatus << "," << (int)r.sampleNumber << ","
+                               << r.durationMs << "," << (int)r.deviceId << "\n";
+                    sharedLog->flush();
                 }
             }
-            // else: oscillator disconnected -- skip plotting/logging this point entirely
         }
     }
 }
@@ -202,6 +132,7 @@ void MonitorChannel::Render()
     else               { if (ImGui::Button("Disconnect")) Disconnect(); }
 
     ImGui::Text("Status: %s", m_connected ? "connected" : "not connected");
+    ImGui::SameLine();
     if (!m_lastError.empty())
         ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "%s", m_lastError.c_str());
     if (m_connected)
@@ -219,25 +150,7 @@ void MonitorChannel::Render()
         m_rate5.clear(); m_rate30.clear(); m_rate60.clear();
         m_appStart = std::chrono::steady_clock::now();
     }
-    ImGui::SameLine();
-    if (ImGui::Button(m_logging ? "Stop and save logging" : "Start logging"))
-        ToggleLogging();
-    ImGui::SameLine();
-    {
-        ImVec2 boxSize(20, 20);
-        ImVec2 p = ImGui::GetCursorScreenPos();
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        ImU32 boxColor = m_logging ? IM_COL32(0, 200, 0, 255) : IM_COL32(100, 100, 100, 255);
-        dl->AddRectFilled(p, ImVec2(p.x + boxSize.x, p.y + boxSize.y), boxColor, 3.0f);
-        dl->AddRect(p, ImVec2(p.x + boxSize.x, p.y + boxSize.y), IM_COL32(0, 0, 0, 255), 3.0f);
-        ImGui::Dummy(boxSize);
-    }
-
-    if (m_logging)
-        ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "Logging to: %s", m_logFilePath.c_str());
-    else if (!m_logSavedMessage.empty())
-        ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "%s", m_logSavedMessage.c_str());
-
+    
     if (!m_frequency_hz.empty())
         ImGui::Text("Latest: %.2f Hz", m_frequency_hz.back());
     // ImGui::Text("Polls: %d  OK: %d", m_worker.GetPollCount(), m_worker.GetSuccessCount());
