@@ -47,6 +47,8 @@ static std::string g_logFilePath;
 static std::string g_logSavedMessage;
 namespace fs = std::filesystem;
 
+static char g_labelBuf[128] = "";
+
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -237,7 +239,7 @@ int main(int, char**)
                     if (g_logFile.is_open())
                     {
                         g_logFile << std::fixed << std::setprecision(4);
-                        g_logFile << "Channel,Time_s,Frequency_Hz,Rate5pt_Hz_s,Rate30pt_Hz_s,Rate60pt_Hz_s,OscillatorStatus,SampleNumber,DurationMs,DeviceId\n";
+                        g_logFile << "Channel,Time_s,Frequency_Hz,Rate5pt_Hz_s,Rate30pt_Hz_s,Rate60pt_Hz_s,OscillatorStatus,SampleNumber,DurationMs,DeviceId,Label\n";
                         g_logging = true;
                         g_logSavedMessage.clear();
                         std::cout << "[TM13Monitor] Logging started: " << g_logFilePath << std::endl;
@@ -267,10 +269,14 @@ int main(int, char**)
                     ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "Logging to: %s", g_logFilePath.c_str());
                 else if (!g_logSavedMessage.empty())
                     ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "%s", g_logSavedMessage.c_str());
+                
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(250);
+                ImGui::InputTextWithHint("##Label", "Label", g_labelBuf, sizeof(g_labelBuf));
 
                 ImGui::Separator();
 
-                for (auto& ch : g_channels) ch->Update(&g_logFile, g_logging);
+                for (auto& ch : g_channels) ch->Update(&g_logFile, g_logging, g_labelBuf);
 
                 bool anyDockedRenderedYet = false;
                 for (size_t i = 0; i < g_channels.size(); ++i)

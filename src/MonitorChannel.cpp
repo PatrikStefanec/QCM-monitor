@@ -41,8 +41,8 @@ void MonitorChannel::Disconnect()
     m_connected = false;
 }
 
-void MonitorChannel::Update(std::ofstream* sharedLog, bool logging)
-{
+void MonitorChannel::Update(std::ofstream* sharedLog, bool logging, const char* label)
+    {
     if (!m_connected) return;
 
     Prevac::FrequencyReading r;
@@ -74,9 +74,10 @@ void MonitorChannel::Update(std::ofstream* sharedLog, bool logging)
                 if (logging && sharedLog && sharedLog->is_open())
                 {
                     *sharedLog << m_id << "," << t << "," << r.frequency_hz << ","
-                               << m_rate5.back() << "," << m_rate30.back() << "," << m_rate60.back() << ","
-                               << (int)r.oscillatorStatus << "," << (int)r.sampleNumber << ","
-                               << r.durationMs << "," << (int)r.deviceId << "\n";
+                        << m_rate5.back() << "," << m_rate30.back() << "," << m_rate60.back() << ","
+                        << (int)r.oscillatorStatus << "," << (int)r.sampleNumber << ","
+                        << r.durationMs << "," << (int)r.deviceId << ","
+                        << "\"" << label << "\"" << "\n";
                     sharedLog->flush();
                 }
             }

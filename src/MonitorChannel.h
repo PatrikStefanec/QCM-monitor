@@ -13,7 +13,7 @@ public:
     explicit MonitorChannel(int id);
     ~MonitorChannel();
 
-    void Update(std::ofstream* sharedLog, bool logging); // call once per frame: polls worker, appends data, writes log rows
+    void Update(std::ofstream* sharedLog, bool logging, const char* label); // call once per frame: polls worker, appends data, writes log rows
     void Render(); // call once per frame: draws this channel's UI panel
     bool IsPoppedOut() const { return m_poppedOut; }
     bool WantsRemoval() const { return m_markedForRemoval; }
