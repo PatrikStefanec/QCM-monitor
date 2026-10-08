@@ -52,6 +52,7 @@ void MonitorChannel::Update(std::ofstream* sharedLog, bool logging, const char* 
         m_latestDebug = d;
         if (d.crcOk)
         {
+            m_lastDeviceId = r.deviceId; // remember which device type answered
             m_sensorConnected = (r.oscillatorStatus == 1);
 
             if (m_sensorConnected)
@@ -132,7 +133,10 @@ void MonitorChannel::Render()
     if (!m_connected) { if (ImGui::Button("Connect")) Connect(); }
     else               { if (ImGui::Button("Disconnect")) Disconnect(); }
 
-    ImGui::Text("Status: %s", m_connected ? "connected" : "not connected");
+    if (m_lastDeviceId == 13 || m_lastDeviceId == 14)
+        ImGui::Text("Status: %s (TM%d)", m_connected ? "connected" : "not connected", m_lastDeviceId);
+    else
+        ImGui::Text("Status: %s", m_connected ? "connected" : "not connected");
     ImGui::SameLine();
     if (!m_lastError.empty())
         ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "%s", m_lastError.c_str());
@@ -143,6 +147,17 @@ void MonitorChannel::Render()
         else
             ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.2f, 1.0f), "Sensor: DISCONNECTED (no microbalance detected)");
     }
+
+    if (m_lastDeviceId == 14)
+    {
+        ImGui::SameLine();
+        const char* rateLabels[] = { "10 sps", "4 sps", "2 sps", "1 sps", "0.5 sps" };
+        int rateIndex = m_sampleFreqCode - 1;
+        ImGui::SetNextItemWidth(100);
+        if (ImGui::Combo("Rate", &rateIndex, rateLabels, IM_ARRAYSIZE(rateLabels)))
+            m_sampleFreqCode = (uint8_t)(rateIndex + 1);
+    }
+
     ImGui::Separator();
 
     if (ImGui::Button("Reset plot"))
@@ -158,12 +173,12 @@ void MonitorChannel::Render()
 
     if (ImPlot::BeginPlot("Frequency", ImVec2(-1, 260)))
     {
-        ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, 0);
+        ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 
         if (!m_frequency_hz.empty())
         {
-            double center = m_frequency_hz.back();
-            ImPlot::SetupAxisLimits(ImAxis_Y1, center - m_freqWindowHz, center + m_freqWindowHz, ImGuiCond_Always);
+            // double center = m_frequency_hz.back();
+            // ImPlot::SetupAxisLimits(ImAxis_Y1, center - m_freqWindowHz, center + m_freqWindowHz, ImGuiCond_Always);
 
             ImPlotSpec spec; spec.LineColor = ImVec4(0.2f, 0.8f, 1.0f, 1.0f); spec.LineWeight = 2.0f;
             ImPlot::PlotLine("Frequency", m_time_s.data(), m_frequency_hz.data(), (int)m_time_s.size(), spec);

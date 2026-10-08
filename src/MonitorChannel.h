@@ -26,6 +26,7 @@ private:
     char m_comPortBuf[32];
     uint8_t m_deviceAddress = 0xC8;
     uint8_t m_sampleFreqCode = 1;
+    uint8_t m_lastDeviceId = 0;
 
     SerialWorker m_worker;
     bool m_connected = false;
