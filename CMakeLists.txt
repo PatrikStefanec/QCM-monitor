@@ -13,7 +13,7 @@ set(IMPLOT_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/external/implot
 )
 
-add_executable(TM13Monitor
+add_executable(TM13Monitor WIN32
     src/main.cpp
     src/SerialPort.h
     src/SerialPort.cpp
@@ -24,6 +24,10 @@ add_executable(TM13Monitor
     src/MonitorChannel.cpp
     src/ComPortList.h
     src/ComPortList.cpp
+    UI/themes.h
+    UI/themes.cpp
+
+    resources/app.rc
     
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
@@ -38,6 +42,12 @@ add_executable(TM13Monitor
     ${IMPLOT_DIR}/implot_items.cpp
 )
 
+if(MSVC)
+    target_link_options(TM13Monitor PRIVATE
+        /ENTRY:mainCRTStartup
+    )
+endif()
+
 target_include_directories(TM13Monitor PRIVATE
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
@@ -49,3 +59,4 @@ target_link_libraries(TM13Monitor PRIVATE
     dxgi
     d3dcompiler
 )
+

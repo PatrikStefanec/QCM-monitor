@@ -28,7 +28,7 @@
 #include "imgui_impl_dx11.h"
 #include <d3d11.h>
 #include <tchar.h>
-
+#include "../UI/themes.h"
 
 
 // Data
@@ -48,6 +48,8 @@ static std::string g_logSavedMessage;
 namespace fs = std::filesystem;
 
 static char g_labelBuf[128] = "";
+
+static int g_themeIndex = 0; // 0 = Dark, 1 = Light
 
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
@@ -81,7 +83,25 @@ static std::string GetLogsDirectory()
     return logsDir.string();
 }
 
-// Main code
+static void ApplyTheme(int themeIndex)
+{
+    if (themeIndex == 1)
+        ImGui::StyleColorsLight();
+    // else if (themeIndex == 2) 
+    //     Themes::ApplyImGuiPaperAndInkStyle();       
+    else
+        ImGui::StyleColorsDark();
+
+    // Re-apply the viewport fix every time, since StyleColorsX() resets all colors
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+}
+
 int main(int, char**)
 {
     SetUnhandledExceptionFilter(CrashLogHandler);
@@ -119,14 +139,8 @@ int main(int, char**)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // Tweak style so platform (popped-out) windows render correctly
+    ApplyTheme(g_themeIndex);
     ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
     //ImGui::StyleColorsLight();
 
     // Setup scaling
@@ -273,6 +287,12 @@ int main(int, char**)
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(250);
                 ImGui::InputTextWithHint("##Label", "Label", g_labelBuf, sizeof(g_labelBuf));
+                
+                ImGui::SameLine();
+                const char* themeNames[] = { "Dark", "Light", "Classic" };
+                ImGui::SetNextItemWidth(100);
+                if (ImGui::Combo("Theme", &g_themeIndex, themeNames, IM_ARRAYSIZE(themeNames)))
+                    ApplyTheme(g_themeIndex);
 
                 ImGui::Separator();
 

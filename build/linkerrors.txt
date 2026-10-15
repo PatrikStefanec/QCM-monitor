@@ -1,8 +1,11 @@
 ================================================================================
 Linker Errors
-Generated: 2026-10-07T08:53:31.325Z
-Total Errors: 1
+Generated: 2026-10-15T14:08:10.230Z
+Total Errors: 2
 ================================================================================
 
-[LNK1168] (MSVC)
-cannot open C:\Software\TM13Monitor\build\Debug\TM13Monitor.exe for writing [C:\Software\TM13Monitor\build\TM13Monitor.vcxproj]
+[LNK2019] (MSVC)
+unresolved external symbol "void __cdecl Themes::ApplyDarkTeal(void)" (?ApplyDarkTeal@Themes@@YAXXZ) referenced in function "void __cdecl ApplyTheme(int)" (?ApplyTheme@@YAXH@Z) [C:\Software\TM13Monitor\build\TM13Monitor.vcxproj]
+
+[LNK1120] (MSVC)
+1 unresolved externals [C:\Software\TM13Monitor\build\TM13Monitor.vcxproj]

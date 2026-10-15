@@ -16,6 +16,9 @@
     <ClCompile Include="C:\Software\TM13Monitor\src\ComPortList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Software\TM13Monitor\UI\themes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Software\TM13Monitor\external\imgui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,9 +63,17 @@
     <ClInclude Include="C:\Software\TM13Monitor\src\ComPortList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Software\TM13Monitor\UI\themes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Software\TM13Monitor\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="C:\Software\TM13Monitor\resources\app.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

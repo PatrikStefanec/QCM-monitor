@@ -1,0 +1,15 @@
+C:\Software\TM13Monitor\src\main.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\main.obj
+C:\Software\TM13Monitor\src\SerialPort.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\SerialPort.obj
+C:\Software\TM13Monitor\src\PrevacProtocol.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\PrevacProtocol.obj
+C:\Software\TM13Monitor\src\MonitorChannel.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\MonitorChannel.obj
+C:\Software\TM13Monitor\src\ComPortList.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\ComPortList.obj
+C:\Software\TM13Monitor\UI\themes.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\themes.obj
+C:\Software\TM13Monitor\external\imgui\imgui.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui.obj
+C:\Software\TM13Monitor\external\imgui\imgui_draw.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui_draw.obj
+C:\Software\TM13Monitor\external\imgui\imgui_tables.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui_tables.obj
+C:\Software\TM13Monitor\external\imgui\imgui_widgets.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui_widgets.obj
+C:\Software\TM13Monitor\external\imgui\imgui_demo.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui_demo.obj
+C:\Software\TM13Monitor\external\imgui\backends\imgui_impl_win32.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui_impl_win32.obj
+C:\Software\TM13Monitor\external\imgui\backends\imgui_impl_dx11.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\imgui_impl_dx11.obj
+C:\Software\TM13Monitor\external\implot\implot.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\implot.obj
+C:\Software\TM13Monitor\external\implot\implot_items.cpp;C:\Software\TM13Monitor\build\TM13Monitor.dir\Release\implot_items.obj

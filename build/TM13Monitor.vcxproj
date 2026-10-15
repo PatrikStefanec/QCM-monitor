@@ -126,6 +126,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -133,7 +134,7 @@
       <LinkErrorReporting></LinkErrorReporting>
       <ProgramDataBaseFile>C:/Software/TM13Monitor/build/Debug/TM13Monitor.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -182,6 +183,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -189,7 +191,7 @@
       <LinkErrorReporting></LinkErrorReporting>
       <ProgramDataBaseFile>C:/Software/TM13Monitor/build/Release/TM13Monitor.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -238,6 +240,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -245,7 +248,7 @@
       <LinkErrorReporting></LinkErrorReporting>
       <ProgramDataBaseFile>C:/Software/TM13Monitor/build/MinSizeRel/TM13Monitor.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -293,6 +296,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
       <DataExecutionPrevention></DataExecutionPrevention>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
@@ -300,7 +304,7 @@
       <LinkErrorReporting></LinkErrorReporting>
       <ProgramDataBaseFile>C:/Software/TM13Monitor/build/RelWithDebInfo/TM13Monitor.pdb</ProgramDataBaseFile>
       <RandomizedBaseAddress></RandomizedBaseAddress>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -374,6 +378,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Software\TM13Monitor\src\MonitorChannel.cpp" />
     <ClInclude Include="C:\Software\TM13Monitor\src\ComPortList.h" />
     <ClCompile Include="C:\Software\TM13Monitor\src\ComPortList.cpp" />
+    <ClInclude Include="C:\Software\TM13Monitor\UI\themes.h" />
+    <ClCompile Include="C:\Software\TM13Monitor\UI\themes.cpp" />
+    <ResourceCompile Include="C:\Software\TM13Monitor\resources\app.rc" />
     <ClCompile Include="C:\Software\TM13Monitor\external\imgui\imgui.cpp" />
     <ClCompile Include="C:\Software\TM13Monitor\external\imgui\imgui_draw.cpp" />
     <ClCompile Include="C:\Software\TM13Monitor\external\imgui\imgui_tables.cpp" />
