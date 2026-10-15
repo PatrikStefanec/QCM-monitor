@@ -289,7 +289,7 @@ int main(int, char**)
                 ImGui::InputTextWithHint("##Label", "Label", g_labelBuf, sizeof(g_labelBuf));
                 
                 ImGui::SameLine();
-                const char* themeNames[] = { "Dark", "Light", "Classic" };
+                const char* themeNames[] = { "Dark", "Light"};
                 ImGui::SetNextItemWidth(100);
                 if (ImGui::Combo("Theme", &g_themeIndex, themeNames, IM_ARRAYSIZE(themeNames)))
                     ApplyTheme(g_themeIndex);
