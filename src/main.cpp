@@ -303,7 +303,24 @@ int main(int, char**)
                     ApplyTheme(g_themeIndex);
 
                 ImGui::Separator();
+                static bool g_combinedPlot = false;
+                static int  g_combinedRateWindow = 1; // 0=5pt, 1=30pt, 2=60pt
+                ImGui::SameLine();
+                const bool combinedWasOn = g_combinedPlot;
+                if (combinedWasOn)
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+                if (ImGui::Button(g_combinedPlot ? "Combined plot: ON" : "Combined plot: OFF"))
+                    g_combinedPlot = !g_combinedPlot;
+                if (combinedWasOn)
+                    ImGui::PopStyleColor();
 
+                if (g_combinedPlot)
+                {
+                    ImGui::SameLine();
+                    const char* rateWindows[] = { "5pt", "30pt", "60pt" };
+                    ImGui::SetNextItemWidth(80);
+                    ImGui::Combo("Rate window", &g_combinedRateWindow, rateWindows, IM_ARRAYSIZE(rateWindows));
+                }
                 for (auto& ch : g_channels) ch->Update(&g_logFile, g_logging, g_labelBuf);
 
                 bool anyDockedRenderedYet = false;
@@ -315,13 +332,14 @@ int main(int, char**)
                 float spacing = ImGui::GetStyle().ItemSpacing.x;
                 float panelW = dockedCount > 0 ? (avail.x - spacing * (dockedCount - 1)) / dockedCount : avail.x;
                 panelW = (std::max)(panelW, 380.0f); // don't get unusably narrow with many channels
-                float panelH = avail.y;
+                float controlsH = ImGui::GetFrameHeightWithSpacing() * 8.0f + ImGui::GetStyle().WindowPadding.y * 2.0f;
+                float panelH = g_combinedPlot ? controlsH : avail.y;
 
                 for (size_t i = 0; i < g_channels.size(); ++i)
                 {
                     if (g_channels[i]->IsPoppedOut())
                     {
-                        g_channels[i]->Render(panelW, panelH); // size ignored when popped out
+                        g_channels[i]->Render(panelW, panelH, !g_combinedPlot); // size ignored when popped out
                         continue;
                     }
 
@@ -330,6 +348,28 @@ int main(int, char**)
 
                     g_channels[i]->Render(panelW, panelH);
                     anyDockedRenderedYet = true;
+                }
+                if (g_combinedPlot)
+                {
+                    static const ImVec4 palette[] = {
+                        ImVec4(0.20f, 0.80f, 1.00f, 1), ImVec4(1.00f, 0.45f, 0.35f, 1),
+                        ImVec4(0.45f, 0.90f, 0.40f, 1), ImVec4(1.00f, 0.85f, 0.25f, 1),
+                        ImVec4(0.80f, 0.50f, 1.00f, 1), ImVec4(1.00f, 0.60f, 0.85f, 1)
+                    };
+                    const int paletteN = IM_ARRAYSIZE(palette);
+
+                    float plotH = (std::max)(150.0f, ImGui::GetContentRegionAvail().y - 4.0f);
+                    if (ImPlot::BeginPlot("Combined", ImVec2(-1, plotH)))
+                    {
+                        ImPlot::SetupAxis(ImAxis_X1, "Time [s]", ImPlotAxisFlags_AutoFit);
+                        ImPlot::SetupAxis(ImAxis_Y1, "Frequency [Hz]", ImPlotAxisFlags_AutoFit);
+                        ImPlot::SetupAxis(ImAxis_Y2, "Rate [Hz/s]", ImPlotAxisFlags_AuxDefault | ImPlotAxisFlags_AutoFit);
+
+                        for (auto& ch : g_channels)
+                            ch->PlotSeries(palette[ch->Id() % paletteN], g_combinedRateWindow);
+
+                        ImPlot::EndPlot();
+                    }
                 }
                 g_channels.erase(
                     std::remove_if(g_channels.begin(), g_channels.end(),

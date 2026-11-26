@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <chrono>
+#include "imgui.h"
 
 class MonitorChannel
 {
@@ -14,9 +15,11 @@ public:
     ~MonitorChannel();
 
     void Update(std::ofstream* sharedLog, bool logging, const char* label); // call once per frame: polls worker, appends data, writes log rows
-    void Render(float width, float height); // call once per frame: draws this channel's UI panel
-    bool IsPoppedOut() const { return m_poppedOut; }
+    void Render(float width, float height, bool showPlots = true);
+    int  Id() const { return m_id; }
+    void PlotSeries(const ImVec4& color, int rateWindow); // draws this channel into the currently open plot    bool IsPoppedOut() const { return m_poppedOut; }
     bool WantsRemoval() const { return m_markedForRemoval; }
+    bool IsPoppedOut() const { return m_poppedOut; }
 
 private:
     void Connect();

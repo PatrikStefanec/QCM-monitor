@@ -86,11 +86,31 @@ void MonitorChannel::Update(std::ofstream* sharedLog, bool logging, const char* 
     }
 }
 
-void MonitorChannel::Render(float width, float height)
+void MonitorChannel::PlotSeries(const ImVec4& color, int rateWindow)
+{
+    if (m_time_s.empty()) return;
+
+    const char* windowNames[] = { "5pt", "30pt", "60pt" };
+    const std::vector<double>& rate = (rateWindow == 0) ? m_rate5 : (rateWindow == 1) ? m_rate30 : m_rate60;
+
+    char nameF[32], nameR[48];
+    snprintf(nameF, sizeof(nameF), "Ch%d freq", m_id);
+    snprintf(nameR, sizeof(nameR), "Ch%d rate (%s)", m_id, windowNames[rateWindow]);
+
+    ImPlot::SetAxes(ImAxis_X1, ImAxis_Y1);
+    ImPlotSpec sf; sf.LineColor = color; sf.LineWeight = 2.0f;
+    ImPlot::PlotLine(nameF, m_time_s.data(), m_frequency_hz.data(), (int)m_time_s.size(), sf);
+
+    ImPlot::SetAxes(ImAxis_X1, ImAxis_Y2);
+    ImPlotSpec sr; sr.LineColor = color; sr.LineWeight = 1.2f;
+    ImPlot::PlotLine(nameR, m_time_s.data(), rate.data(), (int)m_time_s.size(), sr);
+}
+
+void MonitorChannel::Render(float width, float height, bool showPlots)
 {
     ImGui::PushID(m_id);
-
     const bool poppedOutThisFrame = m_poppedOut;
+    const bool drawPlots = showPlots || poppedOutThisFrame;
 
     bool windowOpen = true;
     if (poppedOutThisFrame)
@@ -166,45 +186,48 @@ void MonitorChannel::Render(float width, float height)
         m_rate5.clear(); m_rate30.clear(); m_rate60.clear();
         m_appStart = std::chrono::steady_clock::now();
     }
-    
-    if (!m_frequency_hz.empty())
-        ImGui::Text("Latest: %.2f Hz", m_frequency_hz.back());
-    // ImGui::Text("Polls: %d  OK: %d", m_worker.GetPollCount(), m_worker.GetSuccessCount());
-    float remaining = ImGui::GetContentRegionAvail().y;
-    float overhead = ImGui::GetFrameHeightWithSpacing() * 2 + ImGui::GetStyle().ItemSpacing.y * 2; // "Deposition Rate" header + 30pt text line
-    float plotH = (std::max)(120.0f, (remaining - overhead) * 0.5f);
-    if (ImPlot::BeginPlot("Frequency", ImVec2(-1, plotH)))
+    if (drawPlots) 
     {
-        ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
-
         if (!m_frequency_hz.empty())
+        ImGui::Text("Latest: %.2f Hz", m_frequency_hz.back());
+        // ImGui::Text("Polls: %d  OK: %d", m_worker.GetPollCount(), m_worker.GetSuccessCount());
+        float remaining = ImGui::GetContentRegionAvail().y;
+        float overhead = ImGui::GetFrameHeightWithSpacing() * 2 + ImGui::GetStyle().ItemSpacing.y * 2; // "Deposition Rate" header + 30pt text line
+        float plotH = (std::max)(120.0f, (remaining - overhead) * 0.5f);
+        if (ImPlot::BeginPlot("Frequency", ImVec2(-1, plotH)))
         {
-            // double center = m_frequency_hz.back();
-            // ImPlot::SetupAxisLimits(ImAxis_Y1, center - m_freqWindowHz, center + m_freqWindowHz, ImGuiCond_Always);
+            ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 
-            ImPlotSpec spec; spec.LineColor = ImVec4(0.2f, 0.8f, 1.0f, 1.0f); spec.LineWeight = 2.0f;
-            ImPlot::PlotLine("Frequency", m_time_s.data(), m_frequency_hz.data(), (int)m_time_s.size(), spec);
+            if (!m_frequency_hz.empty())
+            {
+                // double center = m_frequency_hz.back();
+                // ImPlot::SetupAxisLimits(ImAxis_Y1, center - m_freqWindowHz, center + m_freqWindowHz, ImGuiCond_Always);
+
+                ImPlotSpec spec; spec.LineColor = ImVec4(0.2f, 0.8f, 1.0f, 1.0f); spec.LineWeight = 2.0f;
+                ImPlot::PlotLine("Frequency", m_time_s.data(), m_frequency_hz.data(), (int)m_time_s.size(), spec);
+            }
+            ImPlot::EndPlot();
         }
-        ImPlot::EndPlot();
-    }
 
-    ImGui::SeparatorText("Deposition Rate");
-    if (!m_time_s.empty())
-        ImGui::Text("30pt rate: %.4f Hz/s", m_rate30.data()[m_rate30.size() - 1]);
-    if (ImPlot::BeginPlot("Deposition Rate", ImVec2(-1, plotH)))
-    {
-        ImPlot::SetupAxes("Time [s]", "Rate [Hz/s]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+        ImGui::SeparatorText("Deposition Rate");
         if (!m_time_s.empty())
+            ImGui::Text("30pt rate: %.4f Hz/s", m_rate30.data()[m_rate30.size() - 1]);
+        if (ImPlot::BeginPlot("Deposition Rate", ImVec2(-1, plotH)))
         {
-            ImPlotSpec s5; s5.LineColor = ImVec4(1, 0.4f, 0.4f, 1); s5.LineWeight = 1.7f;
-            ImPlot::PlotLine("5pt", m_time_s.data(), m_rate5.data(), (int)m_time_s.size(), s5);
-            ImPlotSpec s30; s30.LineColor = ImVec4(0.4f, 1, 0.4f, 1); s30.LineWeight = 1.7f;
-            ImPlot::PlotLine("30pt", m_time_s.data(), m_rate30.data(), (int)m_time_s.size(), s30);
-            ImPlotSpec s60; s60.LineColor = ImVec4(1.0f, 0.95f, 0.3f, 1.0f); s60.LineWeight = 1.7f;
-            ImPlot::PlotLine("60pt", m_time_s.data(), m_rate60.data(), (int)m_time_s.size(), s60);
+            ImPlot::SetupAxes("Time [s]", "Rate [Hz/s]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+            if (!m_time_s.empty())
+            {
+                ImPlotSpec s5; s5.LineColor = ImVec4(1, 0.4f, 0.4f, 1); s5.LineWeight = 1.7f;
+                ImPlot::PlotLine("5pt", m_time_s.data(), m_rate5.data(), (int)m_time_s.size(), s5);
+                ImPlotSpec s30; s30.LineColor = ImVec4(0.4f, 1, 0.4f, 1); s30.LineWeight = 1.7f;
+                ImPlot::PlotLine("30pt", m_time_s.data(), m_rate30.data(), (int)m_time_s.size(), s30);
+                ImPlotSpec s60; s60.LineColor = ImVec4(1.0f, 0.95f, 0.3f, 1.0f); s60.LineWeight = 1.7f;
+                ImPlot::PlotLine("60pt", m_time_s.data(), m_rate60.data(), (int)m_time_s.size(), s60);
+            }
+            ImPlot::EndPlot();
         }
-        ImPlot::EndPlot();
     }
+    
 
     if (poppedOutThisFrame)
     {
