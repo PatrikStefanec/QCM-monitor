@@ -86,7 +86,7 @@ void MonitorChannel::Update(std::ofstream* sharedLog, bool logging, const char* 
     }
 }
 
-void MonitorChannel::Render()
+void MonitorChannel::Render(float width, float height)
 {
     ImGui::PushID(m_id);
 
@@ -97,12 +97,12 @@ void MonitorChannel::Render()
     {
         char winTitle[64];
         snprintf(winTitle, sizeof(winTitle), "Channel %d###ChannelWindow_%d", m_id, m_id);
-        ImGui::SetNextWindowSize(ImVec2(520, 900), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
         ImGui::Begin(winTitle, &windowOpen);
     }
     else
     {
-        ImGui::BeginChild("ChannelPanel", ImVec2(520, 900), true);
+        ImGui::BeginChild("ChannelPanel", ImVec2(width, height), true);
     }
 
     ImGui::Text("Channel %d", m_id);
@@ -170,8 +170,10 @@ void MonitorChannel::Render()
     if (!m_frequency_hz.empty())
         ImGui::Text("Latest: %.2f Hz", m_frequency_hz.back());
     // ImGui::Text("Polls: %d  OK: %d", m_worker.GetPollCount(), m_worker.GetSuccessCount());
-
-    if (ImPlot::BeginPlot("Frequency", ImVec2(-1, 260)))
+    float remaining = ImGui::GetContentRegionAvail().y;
+    float overhead = ImGui::GetFrameHeightWithSpacing() * 2 + ImGui::GetStyle().ItemSpacing.y * 2; // "Deposition Rate" header + 30pt text line
+    float plotH = (std::max)(120.0f, (remaining - overhead) * 0.5f);
+    if (ImPlot::BeginPlot("Frequency", ImVec2(-1, plotH)))
     {
         ImPlot::SetupAxes("Time [s]", "Frequency [Hz]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
 
@@ -189,7 +191,7 @@ void MonitorChannel::Render()
     ImGui::SeparatorText("Deposition Rate");
     if (!m_time_s.empty())
         ImGui::Text("30pt rate: %.4f Hz/s", m_rate30.data()[m_rate30.size() - 1]);
-    if (ImPlot::BeginPlot("Deposition Rate", ImVec2(-1, 260)))
+    if (ImPlot::BeginPlot("Deposition Rate", ImVec2(-1, plotH)))
     {
         ImPlot::SetupAxes("Time [s]", "Rate [Hz/s]", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
         if (!m_time_s.empty())

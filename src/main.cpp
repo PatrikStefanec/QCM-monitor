@@ -307,18 +307,28 @@ int main(int, char**)
                 for (auto& ch : g_channels) ch->Update(&g_logFile, g_logging, g_labelBuf);
 
                 bool anyDockedRenderedYet = false;
+                int dockedCount = 0;
+                for (auto& ch : g_channels)
+                    if (!ch->IsPoppedOut()) dockedCount++;
+
+                ImVec2 avail = ImGui::GetContentRegionAvail();
+                float spacing = ImGui::GetStyle().ItemSpacing.x;
+                float panelW = dockedCount > 0 ? (avail.x - spacing * (dockedCount - 1)) / dockedCount : avail.x;
+                panelW = (std::max)(panelW, 380.0f); // don't get unusably narrow with many channels
+                float panelH = avail.y;
+
                 for (size_t i = 0; i < g_channels.size(); ++i)
                 {
                     if (g_channels[i]->IsPoppedOut())
                     {
-                        g_channels[i]->Render(); // separate OS window, doesn't touch main window layout
+                        g_channels[i]->Render(panelW, panelH); // size ignored when popped out
                         continue;
                     }
 
                     if (anyDockedRenderedYet)
                         ImGui::SameLine();
 
-                    g_channels[i]->Render();
+                    g_channels[i]->Render(panelW, panelH);
                     anyDockedRenderedYet = true;
                 }
                 g_channels.erase(
