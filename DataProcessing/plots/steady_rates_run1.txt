@@ -1,0 +1,14 @@
+Log: ../logs/tm13_alllog_20261117_repeatability_run1.csv
+Config: qcm_config.ini
+
+[steady_1]  rate column: Rate60pt_Hz_s, unit: Hz/s (sign inverted)
+  window: Cu50w #1  328.4 .. 482.5 s
+  Ch  Dev      N       mean      std     median  fit slope
+   1   14   2178     1.9166   0.0200     1.9203     1.9172
+   2   13   2176     4.5730   0.1172     4.6193     4.5729
+
+[steady_2]  rate column: Rate60pt_Hz_s, unit: Hz/s (sign inverted)
+  window: Cu100w #2  582.5 .. 660.2 s
+  Ch  Dev      N       mean      std     median  fit slope
+   1   14   1093     4.1843   0.0399     4.1812     4.1853
+   2   13   1095     9.9409   0.2307    10.0353     9.9442

@@ -74,12 +74,16 @@ static std::string GetLogsDirectory()
     GetModuleFileNameA(nullptr, exePath, MAX_PATH);
 
     fs::path exeDir = fs::path(exePath).parent_path();
-    fs::path projectRoot = exeDir.parent_path().parent_path();
-    fs::path logsDir = projectRoot / "logs";
+    fs::path logsDir;
+
+    // Running from <project>/build/<Config>/ -> keep logs in <project>/logs
+    if (exeDir.parent_path().filename() == "build")
+        logsDir = exeDir.parent_path().parent_path() / "logs";
+    else
+        logsDir = exeDir / "logs"; // portable: logs folder next to the exe
 
     std::error_code ec;
     fs::create_directories(logsDir, ec);
-
     return logsDir.string();
 }
 
@@ -258,6 +262,10 @@ int main(int, char**)
                         g_logSavedMessage.clear();
                         std::cout << "[TM13Monitor] Logging started: " << g_logFilePath << std::endl;
                     }
+                    else
+                    {    
+                        g_logSavedMessage = "ERROR: could not create log file: " + g_logFilePath;
+                    }
                 }
                 else
                 {
@@ -320,16 +328,6 @@ int main(int, char**)
 
                 ImGui::End();
             }
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
         }
 
         // Rendering
